@@ -7,10 +7,12 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="happychat" />
+        <module name="socket_pratise" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="happychat" target="1.8" />
+      <module name="socket_pratise" target="1.8" />
     </bytecodeTargetLevel>
   </component>
 </project>

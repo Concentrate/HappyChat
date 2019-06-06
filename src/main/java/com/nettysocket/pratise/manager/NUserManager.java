@@ -1,33 +1,40 @@
 package com.nettysocket.pratise.manager;
 
 import com.nettysocket.pratise.pojo.NUserInfo;
+import com.nettysocket.pratise.protocal.CommonMessage;
+import com.nettysocket.pratise.protocal.NMessageProto;
 import com.nettysocket.pratise.util.NConstants;
 import com.wolfbe.chat.util.NettyUtil;
 import io.netty.channel.Channel;
-import io.netty.util.NetUtil;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Consumer;
 
 /**
  * Created by liudeyu on 2019/6/5.
  */
 public class NUserManager {
+    private static long NOT_ACTIVITE_INTERGAP = 60 * 1000;
     private Logger logger = LoggerFactory.getLogger(this.getClass());
-    private ReentrantLock reentrantLock = new ReentrantLock();
-    private Map<io.netty.channel.Channel, NUserInfo> useInfos = new ConcurrentHashMap<>();
+    private ReentrantReadWriteLock reentrantLock = new ReentrantReadWriteLock();
+    private Map<io.netty.channel.Channel, NUserInfo> useInfoMap = new ConcurrentHashMap<>();
     private AtomicInteger userActivNum = new AtomicInteger();
-    private NUserManager instance;
+    private static NUserManager instance;
+
 
     private NUserManager() {
     }
 
 
-    public synchronized NUserManager instance() {
+    public static synchronized NUserManager instance() {
         if (instance == null) {
             instance = new NUserManager();
         }
@@ -39,15 +46,27 @@ public class NUserManager {
         boolean action();
     }
 
-    private boolean doConcurrentOperation(ConcurrentOperation operation) {
+    private interface ChannelAction {
+        void action(Channel chan);
+    }
+
+    private boolean doConcurrentOperation(ConcurrentOperation operation, boolean writeLock) {
         try {
-            reentrantLock.lock();
+            if (!writeLock) {
+                reentrantLock.readLock().lock();
+            } else {
+                reentrantLock.writeLock().lock();
+            }
             return operation.action();
         } catch (Exception e) {
             logger.debug(NConstants.ERROR_LOG, e.getMessage());
             return false;
         } finally {
-            reentrantLock.unlock();
+            if (!writeLock) {
+                reentrantLock.readLock().unlock();
+            } else {
+                reentrantLock.writeLock().unlock();
+            }
         }
     }
 
@@ -62,10 +81,10 @@ public class NUserManager {
                 userInfo.setChannel(channel);
                 userInfo.setRemoteAddress(remoteAddress);
                 userInfo.setTime(System.currentTimeMillis());
-                useInfos.put(channel, userInfo);
+                useInfoMap.put(channel, userInfo);
                 return true;
             }
-        });
+        }, true);
         return this;
     }
 
@@ -79,7 +98,7 @@ public class NUserManager {
                     return false;
                 }
 
-                NUserInfo info = useInfos.get(channel);
+                NUserInfo info = useInfoMap.get(channel);
                 if (info == null) {
                     return false;
                 }
@@ -90,19 +109,94 @@ public class NUserManager {
                 userActivNum.getAndDecrement();
                 return true;
             }
+        }, true);
+    }
+
+    public void removeChannle(Channel channel) {
+        doConcurrentOperation(() -> {
+            NUserInfo userInfo = useInfoMap.get(channel);
+            if (userInfo != null && userInfo.isAuthen()) {
+                userActivNum.getAndDecrement();
+            }
+            useInfoMap.remove(channel);
+            if (channel != null) {
+                channel.close();
+            }
+            return true;
+        }, true);
+    }
+
+
+    public void cleanNotActivityChannle() {
+        doConcurrentOperation(() -> {
+            Set<Channel> key = useInfoMap.keySet();
+            Set<Channel> needToRemove = new HashSet<>();
+            key.forEach(new Consumer<Channel>() {
+                @Override
+                public void accept(Channel channel) {
+                    if (!channel.isOpen() || !channel.isActive()) {
+                        needToRemove.add(channel);
+                    }
+                    NUserInfo userInfo = useInfoMap.get(channel);
+                    if (userInfo == null || !userInfo.isAuthen() || System.currentTimeMillis() - userInfo.getTime() > NOT_ACTIVITE_INTERGAP) {
+                        needToRemove.add(channel);
+                    }
+                }
+            });
+
+            needToRemove.forEach(new Consumer<Channel>() {
+                @Override
+                public void accept(Channel channel) {
+                    useInfoMap.remove(channel);
+                }
+            });
+            return true;
+        }, true);
+    }
+
+    private void traveUserInfoDoOperation(ChannelAction action) {
+        Set<Channel> key = useInfoMap.keySet();
+        key.forEach(new Consumer<Channel>() {
+            @Override
+            public void accept(Channel channel) {
+                if (!channel.isOpen() || !channel.isActive()) {
+                    return;
+                }
+                NUserInfo userInfo = useInfoMap.get(channel);
+                if (userInfo == null || !userInfo.isAuthen()) {
+                    return;
+                }
+                action.action(channel);
+            }
         });
     }
 
+    public void brocastPingOrPongMessage(int pingPongCode) {
+        if (pingPongCode != NMessageProto.PING || pingPongCode != NMessageProto.PONG) {
+            return;
+        }
+        doConcurrentOperation(() -> {
+            CommonMessage<String> message = (pingPongCode == NMessageProto.PING) ? NMessageProto.buildPingMessage() : NMessageProto.buildPongMessage();
+            traveUserInfoDoOperation((action) -> {
+                action.writeAndFlush(new TextWebSocketFrame(message.buildJsonMessage()));
+            });
+            return true;
+        }, false);
+    }
 
-    public void cleanNotActivityChannle(){
-
+    public void sendChannelMessage(Channel channel, String message) {
+        channel.writeAndFlush(new TextWebSocketFrame(NMessageProto.buildTextMessage(NMessageProto.MESSAGE, message).buildJsonMessage()));
     }
 
 
-
-
-
-
+    public void brocastChannleMessage(String message){
+        doConcurrentOperation(()->{
+            traveUserInfoDoOperation(chan -> {
+                sendChannelMessage(chan,message);
+            });
+            return true;
+        },false);
+    }
 
 
 }

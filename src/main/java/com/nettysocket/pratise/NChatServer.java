@@ -1,5 +1,7 @@
 package com.nettysocket.pratise;
 
+import com.nettysocket.pratise.manager.NUserManager;
+import com.nettysocket.pratise.protocal.NMessageProto;
 import com.wolfbe.chat.core.BaseServer;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -24,37 +26,38 @@ public class NChatServer extends BaseServer {
 
     public NChatServer(int port) {
         this.port = port;
-        scheduledExecutorService= Executors.newScheduledThreadPool(2);
+        scheduledExecutorService = Executors.newScheduledThreadPool(2);
     }
-
 
 
     @Override
     public void start() {
-        b.group(bossGroup,workGroup);
-        b.option(ChannelOption.SO_KEEPALIVE,true)
+        b.group(bossGroup, workGroup);
+        b.option(ChannelOption.SO_KEEPALIVE, true)
                 .channel(ServerChannel.class)
-                .option(ChannelOption.TCP_NODELAY,true)
-                .option(ChannelOption.SO_BACKLOG,1024)
+                .option(ChannelOption.TCP_NODELAY, true)
+                .option(ChannelOption.SO_BACKLOG, 1024)
                 .childHandler(new ChannelInitializer<io.netty.channel.socket.SocketChannel>() {
 
                     @Override
                     protected void initChannel(io.netty.channel.socket.SocketChannel socketChannel) throws Exception {
                         socketChannel.pipeline().addLast(new HttpServerCodec())
-                                .addLast(new HttpObjectAggregator(1024*1024))
+                                .addLast(new HttpObjectAggregator(1024 * 1024))
                                 .addLast(new ChunkedWriteHandler())
-                                .addLast(new IdleStateHandler(60,0,0));
+                                .addLast(new IdleStateHandler(60, 0, 0));
                         // TODO: 2019/6/4 add authen and message
                     }
                 });
         scheduledExecutorService.schedule(new Runnable() {
             @Override
             public void run() {
-
+                NUserManager.instance().cleanNotActivityChannle();
             }
-        },50, TimeUnit.SECONDS);
+        }, 60, TimeUnit.SECONDS);
 
-
+        scheduledExecutorService.schedule(() -> {
+            NUserManager.instance().brocastPingOrPongMessage(NMessageProto.PING);
+        }, 50, TimeUnit.SECONDS);
 
 
     }

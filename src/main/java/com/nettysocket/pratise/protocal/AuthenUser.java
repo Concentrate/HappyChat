@@ -5,7 +5,7 @@ import com.alibaba.fastjson.annotation.JSONField;
 /**
  * Created by liudeyu on 2019/6/6.
  */
-public class AuthenObject {
+public class AuthenUser {
     @JSONField(name = "nick")
     private String nickName;
 

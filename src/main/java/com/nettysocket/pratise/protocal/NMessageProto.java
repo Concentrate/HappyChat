@@ -21,12 +21,12 @@ package com.nettysocket.pratise.protocal;
  */
 public class NMessageProto {
 
-    public final static int PING = 41 >> 5;
-    public final static int PONG = 42 >> 5;
-    public final static int SYS = 43 >> 5;
-    public final static int MESSAGE = 44 >> 5;
-    public final static int AUTHEN = 45 >> 5;
-    public final static int ERROR = 46 >> 5;
+    public final static int PING = 415;
+    public final static int PONG = 425;
+    public final static int SYS = 435;
+    public final static int MESSAGE = 445;
+    public final static int AUTHEN = 455;
+    public final static int ERROR = 465;
 
 
     private int code;
@@ -50,8 +50,8 @@ public class NMessageProto {
         return new CommonMessage<String>(code, text);
     }
 
-    public static CommonMessage<AuthenObject> buildAuthenMessage(int code,AuthenObject object){
-        return new CommonMessage<>(code,object);
+    public static CommonMessage<AuthenUser> buildAuthenMessage(int code, AuthenUser object) {
+        return new CommonMessage<>(code, object);
     }
 
 

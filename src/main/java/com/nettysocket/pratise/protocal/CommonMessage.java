@@ -1,6 +1,7 @@
 package com.nettysocket.pratise.protocal;
 
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.TypeReference;
 import com.alibaba.fastjson.annotation.JSONField;
 
 /**
@@ -51,5 +52,11 @@ public class CommonMessage<T> {
 
     public String buildJsonMessage(){
         return JSONObject.toJSONString(this);
+    }
+
+    public static <T> CommonMessage<T> parseResultV2(String json, Class<T> clazz) {
+        return JSONObject.parseObject(json, new TypeReference<CommonMessage
+                        <T>>(clazz) {
+        });
     }
 }

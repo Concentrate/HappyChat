@@ -4,9 +4,11 @@ import com.nettysocket.pratise.pojo.NUserInfo;
 import com.nettysocket.pratise.protocal.CommonMessage;
 import com.nettysocket.pratise.protocal.NMessageProto;
 import com.nettysocket.pratise.util.NConstants;
+import com.wolfbe.chat.entity.UserInfo;
 import com.wolfbe.chat.util.NettyUtil;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import io.netty.util.internal.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,7 +61,7 @@ public class NUserManager {
             }
             return operation.action();
         } catch (Exception e) {
-            logger.debug(NConstants.ERROR_LOG, e.getMessage());
+            logger.debug(e.getMessage());
             return false;
         } finally {
             if (!writeLock) {
@@ -68,6 +70,16 @@ public class NUserManager {
                 reentrantLock.writeLock().unlock();
             }
         }
+    }
+
+    public void brocastNumber(){
+        traveUserInfoDoOperation((channel)->{
+            doConcurrentOperation(()->{
+                channel.writeAndFlush(NMessageProto.buildTextMessage(NMessageProto.SYS,
+                        "current member num is {}"+userActivNum.get()).buildJsonMessage());
+                return true;
+            },true);
+        });
     }
 
 
@@ -95,12 +107,17 @@ public class NUserManager {
             public boolean action() {
                 if (!channel.isActive() || !channel.isOpen()) {
                     logger.debug("channel {},is close", NettyUtil.parseChannelRemoteAddr(channel));
+                    useInfoMap.remove(channel);
                     return false;
                 }
-
+                if(StringUtil.isNullOrEmpty(nickName)){
+                    logger.debug("nick name cannot be empty");
+                    return false;
+                }
                 NUserInfo info = useInfoMap.get(channel);
                 if (info == null) {
-                    return false;
+                    info=new NUserInfo();
+                    useInfoMap.put(channel,info);
                 }
 
                 info.setNickName(nickName);
@@ -196,6 +213,13 @@ public class NUserManager {
             });
             return true;
         },false);
+    }
+
+    public void updateChannelInfo(Channel channel){
+        NUserInfo userInfo=useInfoMap.get(channel);
+        if(userInfo!=null){
+            userInfo.setTime(System.currentTimeMillis());
+        }
     }
 
 

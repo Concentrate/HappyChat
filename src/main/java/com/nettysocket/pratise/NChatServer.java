@@ -1,5 +1,7 @@
 package com.nettysocket.pratise;
 
+import com.nettysocket.pratise.handler.NAuthenHandler;
+import com.nettysocket.pratise.handler.NMessageHandler;
 import com.nettysocket.pratise.manager.NUserManager;
 import com.nettysocket.pratise.protocal.NMessageProto;
 import com.wolfbe.chat.core.BaseServer;
@@ -45,19 +47,21 @@ public class NChatServer extends BaseServer {
                                 .addLast(new HttpObjectAggregator(1024 * 1024))
                                 .addLast(new ChunkedWriteHandler())
                                 .addLast(new IdleStateHandler(60, 0, 0));
-                        // TODO: 2019/6/4 add authen and message
+                        socketChannel.pipeline().addLast(new NAuthenHandler())
+                        .addLast(new NMessageHandler());
+
                     }
                 });
-        scheduledExecutorService.schedule(new Runnable() {
+        scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
                 NUserManager.instance().cleanNotActivityChannle();
             }
-        }, 60, TimeUnit.SECONDS);
+        }, 5,60, TimeUnit.SECONDS);
 
-        scheduledExecutorService.schedule(() -> {
+        scheduledExecutorService.scheduleAtFixedRate(() -> {
             NUserManager.instance().brocastPingOrPongMessage(NMessageProto.PING);
-        }, 50, TimeUnit.SECONDS);
+        }, 5,50, TimeUnit.SECONDS);
 
 
     }

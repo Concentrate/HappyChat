@@ -6,12 +6,15 @@ import com.nettysocket.pratise.protocal.AuthenUser;
 import com.nettysocket.pratise.protocal.CommonMessage;
 import com.nettysocket.pratise.protocal.NMessageProto;
 import com.nettysocket.pratise.util.NConstants;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.websocketx.*;
+import io.netty.handler.timeout.IdleState;
+import io.netty.handler.timeout.IdleStateEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
@@ -31,9 +34,17 @@ public class NAuthenHandler extends SimpleChannelInboundHandler<Object> {
 
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-
-
-
+        logger.debug("user event is trigger");
+        if(evt instanceof IdleStateEvent){
+            IdleStateEvent event=(IdleStateEvent)evt;
+            if(event.state()== IdleState.READER_IDLE){
+                Channel channel=ctx.channel();
+                channel.close();
+                NUserManager.instance().removeChannle(channel);
+                NUserManager.instance().brocastNumber();
+            }
+        }
+        ctx.fireUserEventTriggered(evt);
     }
 
     private void handleWebSocketFrame(ChannelHandlerContext channelHandlerContext, Object o) {

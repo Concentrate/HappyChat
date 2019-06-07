@@ -2,6 +2,7 @@ package com.nettysocket.pratise.manager;
 
 import com.nettysocket.pratise.pojo.NUserInfo;
 import com.nettysocket.pratise.protocal.CommonMessage;
+import com.nettysocket.pratise.protocal.Extra;
 import com.nettysocket.pratise.protocal.NMessageProto;
 import com.nettysocket.pratise.util.NConstants;
 import com.wolfbe.chat.entity.UserInfo;
@@ -82,6 +83,29 @@ public class NUserManager {
         });
     }
 
+    public void brocastChannleMessage(Channel channel, String tmpMess){
+            NUserInfo userInfo=useInfoMap.get(channel);
+        if(userInfo!=null){
+            CommonMessage<String> text=NMessageProto.buildTextMessage(NMessageProto.MESSAGE,tmpMess);
+            Extra extra=new Extra();
+            extra.setNickeName(userInfo.getNickName());
+            extra.setUserId(userInfo.getId());
+            extra.setTime(System.currentTimeMillis());
+            text.setExtra(extra);
+            brocastCommonMessage(text);
+        }
+    }
+
+
+    public void brocastCommonMessage(CommonMessage message){
+        traveUserInfoDoOperation(chan -> {
+            doConcurrentOperation(()->{
+                chan.writeAndFlush(new TextWebSocketFrame(message.buildJsonMessage()));
+                return true;
+            },true);
+        });
+
+    }
 
     public NUserManager addChannel(Channel channel) {
         doConcurrentOperation(new ConcurrentOperation() {

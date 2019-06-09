@@ -2,7 +2,9 @@ package com.test;
 
 import com.nettysocket.pratise.NChatServer;
 import com.nettysocket.pratise.client.NClient;
+import com.nettysocket.pratise.util.NConstants;
 import com.nettysocket.pratise.util.NUtil;
+import com.wolfbe.chat.HappyChatServer;
 import org.junit.Test;
 
 public class TestOne {
@@ -22,8 +24,15 @@ public class TestOne {
     @Test
     public void startChatClient() {
         NClient nClient = new NClient();
-        nClient.start();
+        nClient.start(NConstants.WEBSOCKET_URL);
     }
 
+
+    @Test
+    public void testHappyServer(){
+        HappyChatServer server=new HappyChatServer(9093);
+        server.init();
+        server.start();
+    }
 
 }

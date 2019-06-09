@@ -5,6 +5,9 @@ import com.nettysocket.pratise.protocal.CommonMessage;
 import com.nettysocket.pratise.protocal.NMessageProto;
 import com.nettysocket.pratise.util.NConstants;
 import com.nettysocket.pratise.util.NUtil;
+import com.wolfbe.chat.HappyChatMain;
+import com.wolfbe.chat.HappyChatServer;
+import com.wolfbe.chat.util.Constants;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -28,13 +31,12 @@ public class NClient {
     private static final String WEBSOCKET_CHANNLE_KEY = "web_socketchannle_key";
     private static final long MAX_PAYLOADS = 1024 * 1024;
 
-    public void start() {
+    public void start(String url) {
         EventLoopGroup e = new NioEventLoopGroup();
         Bootstrap bootstrap = new Bootstrap();
         bootstrap.group(e)
                 .option(ChannelOption.SO_KEEPALIVE, true)
                 .option(ChannelOption.TCP_NODELAY, true)
-                .option(ChannelOption.SO_BACKLOG, 1024 * 1024)
                 .channel(NioSocketChannel.class)
                 .handler(new LoggingHandler())
                 .handler(new ChannelInitializer<SocketChannel>() {
@@ -47,7 +49,7 @@ public class NClient {
                     }
                 });
         try {
-            URI uri = new URI(NConstants.WEBSOCKET_URL);
+            URI uri = new URI(url);
             DefaultHttpHeaders headers = new DefaultHttpHeaders();
             WebSocketClientHandshaker13 socketClientHandshaker13 = new WebSocketClientHandshaker13(uri, WebSocketVersion.V13,
                     "", true, headers, Long.valueOf(MAX_PAYLOADS).intValue());
@@ -57,10 +59,10 @@ public class NClient {
             myClientHanlder.setShakeResult(new DefaultChannelPromise(channel));
             socketClientHandshaker13.handshake(channel);
             myClientHanlder.getShakeResult().sync();
-
             Scanner scanner = new Scanner(System.in);
+            NUtil.logger.info("start to input message info");
             boolean authen = false;
-            while (scanner.hasNext()) {
+            while (true) {
                 if (!authen) {
                     System.out.println("please input your name  ");
                     String text = scanner.nextLine();

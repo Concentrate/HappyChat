@@ -26,7 +26,6 @@ import java.util.concurrent.TimeUnit;
  */
 public class NChatServer extends BaseServer {
 
-    private int port;
     private ScheduledExecutorService scheduledExecutorService;
 
     public NChatServer(int port) {
@@ -43,6 +42,7 @@ public class NChatServer extends BaseServer {
                 .channel(NioServerSocketChannel.class)
                 .option(ChannelOption.TCP_NODELAY, true)
                 .option(ChannelOption.SO_BACKLOG, 1024)
+                .localAddress(port)
                 .childHandler(new ChannelInitializer<io.netty.channel.socket.SocketChannel>() {
 
                     @Override
@@ -57,10 +57,10 @@ public class NChatServer extends BaseServer {
                     }
                 });
         try {
-            Channel client = b.bind(port).sync().channel();
-            NUtil.logger.debug("current client local ip is {}", client.localAddress());
+            Channel client = b.bind().sync().channel();
+            NUtil.logger.debug("current client local ip is {},and the " +
+                    "remote address {}", client.localAddress(),client.remoteAddress());
 
-            client.close().sync();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -68,11 +68,13 @@ public class NChatServer extends BaseServer {
         scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
+                NUtil.logger.info("start scan not activite channel");
                 NUserManager.instance().cleanNotActivityChannle();
             }
         }, 5, 60, TimeUnit.SECONDS);
 
         scheduledExecutorService.scheduleAtFixedRate(() -> {
+            NUtil.logger.info("start browsecast ping or pong channel");
             NUserManager.instance().brocastPingOrPongMessage(NMessageProto.PING);
         }, 5, 50, TimeUnit.SECONDS);
 

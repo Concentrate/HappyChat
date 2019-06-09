@@ -1,11 +1,8 @@
 package com.nettysocket.pratise.handler;
 
-import com.alibaba.fastjson.JSONObject;
 import com.nettysocket.pratise.manager.NUserManager;
 import com.nettysocket.pratise.protocal.CommonMessage;
-import com.nettysocket.pratise.protocal.NMessageProto;
 import com.nettysocket.pratise.util.NUtil;
-import com.wolfbe.chat.entity.UserInfo;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
@@ -23,7 +20,7 @@ public class NMessageHandler extends SimpleChannelInboundHandler<TextWebSocketFr
     public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
         super.channelUnregistered(ctx);
         NUserManager.instance().removeChannle(ctx.channel());
-        NUserManager.instance().brocastNumber();
+        NUserManager.instance().brocastUserActiveNumber();
     }
 
     @Override

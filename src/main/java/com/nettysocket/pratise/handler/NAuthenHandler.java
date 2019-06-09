@@ -17,7 +17,6 @@ import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.Marker;
 
 public class NAuthenHandler extends SimpleChannelInboundHandler<Object> {
     Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -41,7 +40,7 @@ public class NAuthenHandler extends SimpleChannelInboundHandler<Object> {
                 Channel channel=ctx.channel();
                 channel.close();
                 NUserManager.instance().removeChannle(channel);
-                NUserManager.instance().brocastNumber();
+                NUserManager.instance().brocastUserActiveNumber();
             }
         }
         ctx.fireUserEventTriggered(evt);
@@ -51,9 +50,17 @@ public class NAuthenHandler extends SimpleChannelInboundHandler<Object> {
         WebSocketFrame webSocketFrame = (WebSocketFrame) o;
         if (webSocketFrame instanceof PingWebSocketFrame) {
             channelHandlerContext.channel().writeAndFlush(new PingWebSocketFrame());
+            return;
         } else if (webSocketFrame instanceof PongWebSocketFrame) {
             channelHandlerContext.channel().writeAndFlush(new PongWebSocketFrame());
+            return;
+        }else if(webSocketFrame instanceof CloseWebSocketFrame){
+            NUserManager.instance().removeChannle(channelHandlerContext.channel());
+            NUserManager.instance().brocastUserActiveNumber();
+            channelHandlerContext.channel().close();
+            return;
         }
+
 
         if (!(webSocketFrame instanceof TextWebSocketFrame)) {
             logger.debug("only text support for now");
@@ -84,7 +91,7 @@ public class NAuthenHandler extends SimpleChannelInboundHandler<Object> {
                 boolean succ = NUserManager.instance().activiChannel(channelHandlerContext.channel(), commonMessage.getData()
                         .getNickName());
                 NUserManager.instance().sendChannelMessage(channelHandlerContext.channel(),"is success:"+succ);
-                NUserManager.instance().brocastNumber();
+                NUserManager.instance().brocastUserActiveNumber();
                 break;
             case NMessageProto.MESSAGE:
                 // TODO: 2019/6/6 给MessageHandler处理
@@ -107,6 +114,7 @@ public class NAuthenHandler extends SimpleChannelInboundHandler<Object> {
         if (handshaker == null) {
             WebSocketServerHandshakerFactory.sendUnsupportedVersionResponse(channelHandlerContext.channel());
         } else {
+            handshaker.handshake(channelHandlerContext.channel(), request);
             NUserManager.instance().addChannel(channelHandlerContext.channel());
         }
     }

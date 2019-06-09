@@ -5,6 +5,7 @@ import com.nettysocket.pratise.protocal.CommonMessage;
 import com.nettysocket.pratise.protocal.Extra;
 import com.nettysocket.pratise.protocal.NMessageProto;
 import com.nettysocket.pratise.util.NConstants;
+import com.nettysocket.pratise.util.NUtil;
 import com.wolfbe.chat.entity.UserInfo;
 import com.wolfbe.chat.util.NettyUtil;
 import io.netty.channel.Channel;
@@ -73,7 +74,7 @@ public class NUserManager {
         }
     }
 
-    public void brocastNumber(){
+    public void brocastUserActiveNumber(){
         traveUserInfoDoOperation((channel)->{
             doConcurrentOperation(()->{
                 channel.writeAndFlush(NMessageProto.buildTextMessage(NMessageProto.SYS,
@@ -188,7 +189,9 @@ public class NUserManager {
             needToRemove.forEach(new Consumer<Channel>() {
                 @Override
                 public void accept(Channel channel) {
+                    NUtil.logger.info("channel address is being clean {}",channel.remoteAddress());
                     useInfoMap.remove(channel);
+                    channel.close();
                 }
             });
             return true;
@@ -219,6 +222,7 @@ public class NUserManager {
         doConcurrentOperation(() -> {
             CommonMessage<String> message = (pingPongCode == NMessageProto.PING) ? NMessageProto.buildPingMessage() : NMessageProto.buildPongMessage();
             traveUserInfoDoOperation((action) -> {
+                NUtil.logger.info("channel address {} is been notify ping",action.remoteAddress());
                 action.writeAndFlush(new TextWebSocketFrame(message.buildJsonMessage()));
             });
             return true;

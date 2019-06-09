@@ -74,4 +74,16 @@ public class NUserInfo {
     public void generateIdAtom() {
         id = idGen.getAndIncrement();
     }
+
+    @Override
+    public String toString() {
+        return "NUserInfo{" +
+                "channel=" + channel +
+                ", nickName='" + nickName + '\'' +
+                ", remoteAddress='" + remoteAddress + '\'' +
+                ", time=" + time +
+                ", id=" + id +
+                ", isAuthen=" + isAuthen +
+                '}';
+    }
 }

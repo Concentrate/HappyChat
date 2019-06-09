@@ -59,4 +59,13 @@ public class CommonMessage<T> {
                         <T>>(clazz) {
         });
     }
+
+    @Override
+    public String toString() {
+        return "CommonMessage{" +
+                "code=" + code +"\n"+
+                ", data=" + data + "\n"+
+                ", extra=" + extra + "\n"+
+                '}';
+    }
 }

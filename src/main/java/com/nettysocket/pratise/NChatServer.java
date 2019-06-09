@@ -4,10 +4,13 @@ import com.nettysocket.pratise.handler.NAuthenHandler;
 import com.nettysocket.pratise.handler.NMessageHandler;
 import com.nettysocket.pratise.manager.NUserManager;
 import com.nettysocket.pratise.protocal.NMessageProto;
+import com.nettysocket.pratise.util.NUtil;
 import com.wolfbe.chat.core.BaseServer;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ServerChannel;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.stream.ChunkedWriteHandler;
@@ -27,6 +30,7 @@ public class NChatServer extends BaseServer {
     private ScheduledExecutorService scheduledExecutorService;
 
     public NChatServer(int port) {
+        init();
         this.port = port;
         scheduledExecutorService = Executors.newScheduledThreadPool(2);
     }
@@ -36,7 +40,7 @@ public class NChatServer extends BaseServer {
     public void start() {
         b.group(bossGroup, workGroup);
         b.option(ChannelOption.SO_KEEPALIVE, true)
-                .channel(ServerChannel.class)
+                .channel(NioServerSocketChannel.class)
                 .option(ChannelOption.TCP_NODELAY, true)
                 .option(ChannelOption.SO_BACKLOG, 1024)
                 .childHandler(new ChannelInitializer<io.netty.channel.socket.SocketChannel>() {
@@ -48,21 +52,29 @@ public class NChatServer extends BaseServer {
                                 .addLast(new ChunkedWriteHandler())
                                 .addLast(new IdleStateHandler(60, 0, 0));
                         socketChannel.pipeline().addLast(new NAuthenHandler())
-                        .addLast(new NMessageHandler());
+                                .addLast(new NMessageHandler());
 
                     }
                 });
+        try {
+            Channel client = b.bind(port).sync().channel();
+            NUtil.logger.debug("current client local ip is {}", client.localAddress());
+
+            client.close().sync();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
         scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
                 NUserManager.instance().cleanNotActivityChannle();
             }
-        }, 5,60, TimeUnit.SECONDS);
+        }, 5, 60, TimeUnit.SECONDS);
 
         scheduledExecutorService.scheduleAtFixedRate(() -> {
             NUserManager.instance().brocastPingOrPongMessage(NMessageProto.PING);
-        }, 5,50, TimeUnit.SECONDS);
-
+        }, 5, 50, TimeUnit.SECONDS);
 
     }
 }

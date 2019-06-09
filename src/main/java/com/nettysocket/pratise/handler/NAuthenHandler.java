@@ -6,6 +6,7 @@ import com.nettysocket.pratise.protocal.AuthenUser;
 import com.nettysocket.pratise.protocal.CommonMessage;
 import com.nettysocket.pratise.protocal.NMessageProto;
 import com.nettysocket.pratise.util.NConstants;
+import com.nettysocket.pratise.util.NUtil;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -48,11 +49,15 @@ public class NAuthenHandler extends SimpleChannelInboundHandler<Object> {
 
     private void handleWebSocketFrame(ChannelHandlerContext channelHandlerContext, Object o) {
         WebSocketFrame webSocketFrame = (WebSocketFrame) o;
+        // TODO: 2019/6/9 这里ping,pong 涉及轮番，这里更新时间不是很合理 ,为了保留连接，先如此了
         if (webSocketFrame instanceof PingWebSocketFrame) {
-            channelHandlerContext.channel().writeAndFlush(new PingWebSocketFrame());
+            NUserManager.instance().updateChannelInfo(channelHandlerContext.channel());
+            NUtil.logger.info("receive client ping message");
+            channelHandlerContext.channel().writeAndFlush(new PongWebSocketFrame());
             return;
         } else if (webSocketFrame instanceof PongWebSocketFrame) {
-            channelHandlerContext.channel().writeAndFlush(new PongWebSocketFrame());
+            NUserManager.instance().updateChannelInfo(channelHandlerContext.channel());
+            NUtil.logger.info("receive client connect info and pong message");
             return;
         }else if(webSocketFrame instanceof CloseWebSocketFrame){
             NUserManager.instance().removeChannle(channelHandlerContext.channel());
@@ -73,13 +78,12 @@ public class NAuthenHandler extends SimpleChannelInboundHandler<Object> {
         switch (code) {
             case NMessageProto.PING:
                 NUserManager.instance().updateChannelInfo(channelHandlerContext.channel());
-                NUserManager.instance().sendChannelMessage(channelHandlerContext.channel(),
-                        NMessageProto.buildPingMessage().buildJsonMessage());
+                NUtil.logger.info("receive client ping message");
+                channelHandlerContext.channel().writeAndFlush(new PongWebSocketFrame());
                 break;
             case NMessageProto.PONG:
                 NUserManager.instance().updateChannelInfo(channelHandlerContext.channel());
-                NUserManager.instance().sendChannelMessage(channelHandlerContext.channel(),
-                        NMessageProto.buildPongMessage().buildJsonMessage());
+                NUtil.logger.info("receive client connect info and pong message");
                 break;
             case NMessageProto.AUTHEN:
                 CommonMessage<AuthenUser> commonMessage = CommonMessage.parseResultV2(jsonObject.toJSONString(),

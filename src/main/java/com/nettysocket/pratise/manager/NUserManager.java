@@ -26,7 +26,7 @@ import java.util.function.Consumer;
  * Created by liudeyu on 2019/6/5.
  */
 public class NUserManager {
-    private static long NOT_ACTIVITE_INTERGAP = 60 * 1000;
+    private static long NOT_ACTIVITE_INTERGAP = 5 * 60 * 1000;
     private Logger logger = LoggerFactory.getLogger(this.getClass());
     private ReentrantReadWriteLock reentrantLock = new ReentrantReadWriteLock();
     private Map<io.netty.channel.Channel, NUserInfo> useInfoMap = new ConcurrentHashMap<>();
@@ -74,21 +74,21 @@ public class NUserManager {
         }
     }
 
-    public void brocastUserActiveNumber(){
-        traveUserInfoDoOperation((channel)->{
-            doConcurrentOperation(()->{
+    public void brocastUserActiveNumber() {
+        traveUserInfoDoOperation((channel) -> {
+            doConcurrentOperation(() -> {
                 channel.writeAndFlush(NMessageProto.buildTextMessage(NMessageProto.SYS,
-                        "current member num is {}"+userActivNum.get()).buildJsonMessage());
+                        "current member num is {}" + userActivNum.get()).buildJsonMessage());
                 return true;
-            },true);
+            }, true);
         });
     }
 
-    public void brocastChannleMessage(Channel channel, String tmpMess){
-            NUserInfo userInfo=useInfoMap.get(channel);
-        if(userInfo!=null){
-            CommonMessage<String> text=NMessageProto.buildTextMessage(NMessageProto.MESSAGE,tmpMess);
-            Extra extra=new Extra();
+    public void brocastChannleMessage(Channel channel, String tmpMess) {
+        NUserInfo userInfo = useInfoMap.get(channel);
+        if (userInfo != null) {
+            CommonMessage<String> text = NMessageProto.buildTextMessage(NMessageProto.MESSAGE, tmpMess);
+            Extra extra = new Extra();
             extra.setNickeName(userInfo.getNickName());
             extra.setUserId(userInfo.getId());
             extra.setTime(System.currentTimeMillis());
@@ -98,12 +98,12 @@ public class NUserManager {
     }
 
 
-    public void brocastCommonMessage(CommonMessage message){
+    public void brocastCommonMessage(CommonMessage message) {
         traveUserInfoDoOperation(chan -> {
-            doConcurrentOperation(()->{
+            doConcurrentOperation(() -> {
                 chan.writeAndFlush(new TextWebSocketFrame(message.buildJsonMessage()));
                 return true;
-            },true);
+            }, true);
         });
 
     }
@@ -135,14 +135,14 @@ public class NUserManager {
                     useInfoMap.remove(channel);
                     return false;
                 }
-                if(StringUtil.isNullOrEmpty(nickName)){
+                if (StringUtil.isNullOrEmpty(nickName)) {
                     logger.debug("nick name cannot be empty");
                     return false;
                 }
                 NUserInfo info = useInfoMap.get(channel);
                 if (info == null) {
-                    info=new NUserInfo();
-                    useInfoMap.put(channel,info);
+                    info = new NUserInfo();
+                    useInfoMap.put(channel, info);
                 }
 
                 info.setNickName(nickName);
@@ -189,7 +189,7 @@ public class NUserManager {
             needToRemove.forEach(new Consumer<Channel>() {
                 @Override
                 public void accept(Channel channel) {
-                    NUtil.logger.info("channel address is being clean {}",channel.remoteAddress());
+                    NUtil.logger.info("channel address is being clean {}", channel.remoteAddress());
                     useInfoMap.remove(channel);
                     channel.close();
                 }
@@ -222,7 +222,7 @@ public class NUserManager {
         doConcurrentOperation(() -> {
             CommonMessage<String> message = (pingPongCode == NMessageProto.PING) ? NMessageProto.buildPingMessage() : NMessageProto.buildPongMessage();
             traveUserInfoDoOperation((action) -> {
-                NUtil.logger.info("channel address {} is been notify ping",action.remoteAddress());
+                NUtil.logger.info("channel address {} is been notify ping", action.remoteAddress());
                 action.writeAndFlush(new TextWebSocketFrame(message.buildJsonMessage()));
             });
             return true;
@@ -230,22 +230,26 @@ public class NUserManager {
     }
 
     public void sendChannelMessage(Channel channel, String message) {
-        channel.writeAndFlush(new TextWebSocketFrame(NMessageProto.buildTextMessage(NMessageProto.MESSAGE, message).buildJsonMessage()));
+        NUserInfo userInfo = useInfoMap.get(channel);
+        CommonMessage mess = NMessageProto.buildTextMessage(NMessageProto.MESSAGE, message);
+        mess.setExtra(new Extra().buildFromUserInfo(userInfo));
+        channel.writeAndFlush(new TextWebSocketFrame(mess.buildJsonMessage()));
     }
 
 
-    public void brocastChannleMessage(String message){
-        doConcurrentOperation(()->{
+    public void brocastChannleMessage(String message) {
+        doConcurrentOperation(() -> {
             traveUserInfoDoOperation(chan -> {
-                sendChannelMessage(chan,message);
+                NUtil.logger.info("server start browcast message to {}", chan.remoteAddress());
+                sendChannelMessage(chan, message);
             });
             return true;
-        },false);
+        }, false);
     }
 
-    public void updateChannelInfo(Channel channel){
-        NUserInfo userInfo=useInfoMap.get(channel);
-        if(userInfo!=null){
+    public void updateChannelInfo(Channel channel) {
+        NUserInfo userInfo = useInfoMap.get(channel);
+        if (userInfo != null) {
             userInfo.setTime(System.currentTimeMillis());
         }
     }

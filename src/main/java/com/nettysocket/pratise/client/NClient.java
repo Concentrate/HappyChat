@@ -66,8 +66,9 @@ public class NClient {
                 if (!authen) {
                     System.out.println("please input your name  ");
                     String text = scanner.nextLine();
-                    while (StringUtil.isNullOrEmpty(text)) {
+                    if (StringUtil.isNullOrEmpty(text)) {
                         System.out.println("name cannot be empty");
+                        continue;
                     }
                     AuthenUser user = new AuthenUser();
                     user.setNickName(text);
@@ -83,7 +84,7 @@ public class NClient {
                 channel.writeAndFlush(socketFrame).addListener(new ChannelFutureListener() {
                     @Override
                     public void operationComplete(ChannelFuture channelFuture) throws Exception {
-                        NUtil.logger.debug("done it compltey ");
+                        NUtil.logger.debug("message write send completely");
                     }
                 });
             }

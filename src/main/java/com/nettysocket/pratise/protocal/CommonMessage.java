@@ -14,7 +14,7 @@ public class CommonMessage<T> {
     @JSONField(name = "data")
     private T data;
 
-    @JSONField(name="extra")
+    @JSONField(name = "extra")
     private Extra extra;
 
 
@@ -50,22 +50,18 @@ public class CommonMessage<T> {
         this.extra = extra;
     }
 
-    public String buildJsonMessage(){
+    public String buildJsonMessage() {
         return JSONObject.toJSONString(this);
     }
 
     public static <T> CommonMessage<T> parseResultV2(String json, Class<T> clazz) {
         return JSONObject.parseObject(json, new TypeReference<CommonMessage
-                        <T>>(clazz) {
+                <T>>(clazz) {
         });
     }
 
     @Override
     public String toString() {
-        return "CommonMessage{" +
-                "code=" + code +"\n"+
-                ", data=" + data + "\n"+
-                ", extra=" + extra + "\n"+
-                '}';
+        return extra + "" + data + "\n";
     }
 }

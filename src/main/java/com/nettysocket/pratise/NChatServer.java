@@ -28,6 +28,7 @@ public class NChatServer extends BaseServer {
 
     private ScheduledExecutorService scheduledExecutorService;
 
+
     public NChatServer(int port) {
         init();
         this.port = port;
@@ -50,7 +51,7 @@ public class NChatServer extends BaseServer {
                         socketChannel.pipeline().addLast(new HttpServerCodec())
                                 .addLast(new HttpObjectAggregator(1024 * 1024))
                                 .addLast(new ChunkedWriteHandler())
-                                .addLast(new IdleStateHandler(60, 0, 0));
+                                .addLast(new IdleStateHandler(180, 0, 0));
                         socketChannel.pipeline().addLast(new NAuthenHandler())
                                 .addLast(new NMessageHandler());
 
@@ -59,7 +60,7 @@ public class NChatServer extends BaseServer {
         try {
             Channel client = b.bind().sync().channel();
             NUtil.logger.debug("current client local ip is {},and the " +
-                    "remote address {}", client.localAddress(),client.remoteAddress());
+                    "remote address {}", client.localAddress(), client.remoteAddress());
 
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -71,7 +72,7 @@ public class NChatServer extends BaseServer {
                 NUtil.logger.info("start scan not activite channel");
                 NUserManager.instance().cleanNotActivityChannle();
             }
-        }, 5, 60, TimeUnit.SECONDS);
+        }, 3 * 60, 60, TimeUnit.SECONDS);
 
         scheduledExecutorService.scheduleAtFixedRate(() -> {
             NUtil.logger.info("start browsecast ping or pong channel");

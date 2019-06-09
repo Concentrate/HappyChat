@@ -1,6 +1,10 @@
 package com.nettysocket.pratise.client;
 
+import com.alibaba.fastjson.JSONObject;
+import com.nettysocket.pratise.manager.NUserManager;
+import com.nettysocket.pratise.protocal.AuthenUser;
 import com.nettysocket.pratise.protocal.CommonMessage;
+import com.nettysocket.pratise.protocal.NMessageProto;
 import com.nettysocket.pratise.util.NUtil;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
@@ -32,7 +36,7 @@ public class NWebSocketHandler extends SimpleChannelInboundHandler<Object> {
 
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, Object o) throws Exception {
-        if(socketClientHandshaker!=null){
+        if (socketClientHandshaker != null) {
             try {
                 if (!socketClientHandshaker.isHandshakeComplete()) {
                     FullHttpResponse response = (FullHttpResponse) o;
@@ -41,20 +45,33 @@ public class NWebSocketHandler extends SimpleChannelInboundHandler<Object> {
                     shakeResult.setSuccess();
                     return;
                 }
-            }catch (Exception ex){
+            } catch (Exception ex) {
                 shakeResult.setFailure(ex);
             }
         }
-        if (o instanceof WebSocketFrame){
-            WebSocketFrame frame=(WebSocketFrame)o;
-            if(frame instanceof PingWebSocketFrame||frame instanceof PongWebSocketFrame){
-                NUtil.logger.debug("recevie ping or pong frame text");
-            }else if(frame instanceof TextWebSocketFrame){
-                TextWebSocketFrame textWebSocketFrame=(TextWebSocketFrame)frame;
-                CommonMessage<String> message=CommonMessage.parseResultV2(textWebSocketFrame.text(),String.class);
-                NUtil.logger.debug("server message is {}",message);
+        if (o instanceof WebSocketFrame) {
+            WebSocketFrame frame = (WebSocketFrame) o;
+            if (frame instanceof PingWebSocketFrame) {
+                NUtil.logger.debug("recevie ping frame text");
+                channelHandlerContext.channel().writeAndFlush(new PongWebSocketFrame());
+            } else if (frame instanceof PongWebSocketFrame) {
+                NUtil.clientLogger.info("receive server pong message,server is alive");
+            } else if (frame instanceof TextWebSocketFrame) {
+                String text = ((TextWebSocketFrame) frame).text();
+                JSONObject jsonObject = JSONObject.parseObject(text);
+                int code = jsonObject.getInteger("code");
+                switch (code) {
+                    case NMessageProto.AUTHEN:
+                        CommonMessage<AuthenUser> authenUserCommonMessage = CommonMessage.parseResultV2(text, AuthenUser.class);
+                        NUtil.clientLogger.info("server authen info is {}", authenUserCommonMessage);
+                        break;
+                    default:
+                        CommonMessage<String> message = CommonMessage.parseResultV2(text, String.class);
+                        NUtil.logger.debug("from server message is {}", message);
+                        break;
+                }
 
-            }else if(frame instanceof CloseWebSocketFrame){
+            } else if (frame instanceof CloseWebSocketFrame) {
                 NUtil.logger.debug("websocket is close");
                 channelHandlerContext.channel().close();
             }

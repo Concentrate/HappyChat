@@ -15,24 +15,5 @@ public class TestOne {
         NUtil.logger.debug("this is debug hello");
     }
 
-    public @Test
-    void startMySocketServer() {
-        NChatServer chatServer = new NChatServer(8090);
-        chatServer.start();
-    }
-
-    @Test
-    public void startChatClient() {
-        NClient nClient = new NClient();
-        nClient.start(NConstants.WEBSOCKET_URL);
-    }
-
-
-    @Test
-    public void testHappyServer(){
-        HappyChatServer server=new HappyChatServer(9093);
-        server.init();
-        server.start();
-    }
 
 }

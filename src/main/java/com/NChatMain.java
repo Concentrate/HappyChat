@@ -18,13 +18,15 @@ public class NChatMain {
         switch (type) {
             case 1:
                 NChatServerMain.main(null);
+                System.out.println("server start now");
                 break;
             case 2:
                 NClientMain.main(null);
+                System.out.println("client start now");
                 break;
             default:
+                System.out.println("exit now");
                 break;
         }
-        System.out.println("exit now");
     }
 }

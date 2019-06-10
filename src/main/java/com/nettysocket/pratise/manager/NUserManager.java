@@ -9,6 +9,7 @@ import com.nettysocket.pratise.util.NUtil;
 import com.wolfbe.chat.entity.UserInfo;
 import com.wolfbe.chat.util.NettyUtil;
 import io.netty.channel.Channel;
+import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.util.internal.StringUtil;
 import org.slf4j.Logger;
@@ -144,7 +145,6 @@ public class NUserManager {
                     info = new NUserInfo();
                     useInfoMap.put(channel, info);
                 }
-
                 info.setNickName(nickName);
                 info.setAuthen(true);
                 info.setTime(System.currentTimeMillis());
@@ -215,6 +215,7 @@ public class NUserManager {
         });
     }
 
+    /**application ping pong message*/
     public void brocastPingOrPongMessage(int pingPongCode) {
         if (pingPongCode != NMessageProto.PING || pingPongCode != NMessageProto.PONG) {
             return;
@@ -228,6 +229,17 @@ public class NUserManager {
             return true;
         }, false);
     }
+
+    public void brocastWebPingFragme(){
+        doConcurrentOperation(()->{
+            traveUserInfoDoOperation((action)->{
+                NUtil.logger.info("brocast ping frame ");
+                action.writeAndFlush(new PingWebSocketFrame());
+            });
+            return true;
+        },true);
+    }
+
 
     public void sendChannelMessage(Channel channel, String message) {
         NUserInfo userInfo = useInfoMap.get(channel);

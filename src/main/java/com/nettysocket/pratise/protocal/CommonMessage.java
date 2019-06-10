@@ -62,6 +62,6 @@ public class CommonMessage<T> {
 
     @Override
     public String toString() {
-        return extra + "" + data + "\n";
+        return extra + "\n" + "message: " + data;
     }
 }

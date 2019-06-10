@@ -63,6 +63,6 @@ public class Extra {
         SimpleDateFormat format = new SimpleDateFormat(dateFormat);
         return "nickname:'" + nickeName + '\'' +
                 ", time:" + format.format(new Date(time)) +
-                ", current user id:" + userId +"\n";
+                ", current user id:" + userId ;
     }
 }

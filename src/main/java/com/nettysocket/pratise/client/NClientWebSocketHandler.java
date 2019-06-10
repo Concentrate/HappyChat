@@ -13,7 +13,7 @@ import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.websocketx.*;
 
-public class NWebSocketHandler extends SimpleChannelInboundHandler<Object> {
+public class NClientWebSocketHandler extends SimpleChannelInboundHandler<Object> {
 
     private WebSocketClientHandshaker socketClientHandshaker;
     private ChannelPromise shakeResult;
@@ -52,7 +52,7 @@ public class NWebSocketHandler extends SimpleChannelInboundHandler<Object> {
         if (o instanceof WebSocketFrame) {
             WebSocketFrame frame = (WebSocketFrame) o;
             if (frame instanceof PingWebSocketFrame) {
-                NUtil.logger.debug("recevie ping frame text");
+                NUtil.clientLogger.debug("recevie ping frame text");
                 channelHandlerContext.channel().writeAndFlush(new PongWebSocketFrame());
             } else if (frame instanceof PongWebSocketFrame) {
                 NUtil.clientLogger.info("receive server pong message,server is alive");
@@ -67,7 +67,7 @@ public class NWebSocketHandler extends SimpleChannelInboundHandler<Object> {
                         break;
                     default:
                         CommonMessage<String> message = CommonMessage.parseResultV2(text, String.class);
-                        NUtil.logger.debug("from server message is {}", message);
+                        NUtil.clientLogger.debug("from server message is \n {}", message);
                         break;
                 }
 

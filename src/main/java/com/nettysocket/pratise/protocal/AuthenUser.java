@@ -16,4 +16,11 @@ public class AuthenUser {
     public void setNickName(String nickName) {
         this.nickName = nickName;
     }
+
+    @Override
+    public String toString() {
+        return "AuthenUser{" +
+                "nickName='" + nickName + '\'' +
+                '}';
+    }
 }

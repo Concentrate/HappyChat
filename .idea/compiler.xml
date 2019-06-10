@@ -9,5 +9,8 @@
         <module name="happychat" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel target="1.8">
+      <module name="happychat" target="1.8" />
+    </bytecodeTargetLevel>
   </component>
 </project>

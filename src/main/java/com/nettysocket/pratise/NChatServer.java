@@ -6,6 +6,7 @@ import com.nettysocket.pratise.manager.NUserManager;
 import com.nettysocket.pratise.protocal.NMessageProto;
 import com.nettysocket.pratise.util.NUtil;
 import com.wolfbe.chat.core.BaseServer;
+import com.wolfbe.chat.util.DateTimeUtil;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -72,11 +73,11 @@ public class NChatServer extends BaseServer {
                 NUtil.logger.info("start scan not activite channel");
                 NUserManager.instance().cleanNotActivityChannle();
             }
-        }, 3 * 60, 60, TimeUnit.SECONDS);
+        }, 5 * 60, 60, TimeUnit.SECONDS);
 
         scheduledExecutorService.scheduleAtFixedRate(() -> {
             NUtil.logger.info("start browsecast ping or pong channel");
-            NUserManager.instance().brocastPingOrPongMessage(NMessageProto.PING);
+            NUserManager.instance().brocastWebPingFragme();
         }, 5, 50, TimeUnit.SECONDS);
 
     }

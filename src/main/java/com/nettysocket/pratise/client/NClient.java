@@ -3,11 +3,7 @@ package com.nettysocket.pratise.client;
 import com.nettysocket.pratise.protocal.AuthenUser;
 import com.nettysocket.pratise.protocal.CommonMessage;
 import com.nettysocket.pratise.protocal.NMessageProto;
-import com.nettysocket.pratise.util.NConstants;
 import com.nettysocket.pratise.util.NUtil;
-import com.wolfbe.chat.HappyChatMain;
-import com.wolfbe.chat.HappyChatServer;
-import com.wolfbe.chat.util.Constants;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -44,7 +40,7 @@ public class NClient {
                     protected void initChannel(SocketChannel socketChannel) throws Exception {
                         socketChannel.pipeline().addLast(new HttpClientCodec())
                                 .addLast(new HttpObjectAggregator(10 * 1024 * 1024))
-                                .addLast(WEBSOCKET_CHANNLE_KEY, new NWebSocketHandler());
+                                .addLast(WEBSOCKET_CHANNLE_KEY, new NClientWebSocketHandler());
 
                     }
                 });
@@ -54,7 +50,7 @@ public class NClient {
             WebSocketClientHandshaker13 socketClientHandshaker13 = new WebSocketClientHandshaker13(uri, WebSocketVersion.V13,
                     "", true, headers, Long.valueOf(MAX_PAYLOADS).intValue());
             Channel channel = bootstrap.connect(uri.getHost(), uri.getPort()).sync().channel();
-            NWebSocketHandler myClientHanlder = (NWebSocketHandler) channel.pipeline().get(WEBSOCKET_CHANNLE_KEY);
+            NClientWebSocketHandler myClientHanlder = (NClientWebSocketHandler) channel.pipeline().get(WEBSOCKET_CHANNLE_KEY);
             myClientHanlder.setSocketClientHandshaker(socketClientHandshaker13);
             myClientHanlder.setShakeResult(new DefaultChannelPromise(channel));
             socketClientHandshaker13.handshake(channel);

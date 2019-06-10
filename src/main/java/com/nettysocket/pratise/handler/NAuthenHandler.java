@@ -42,6 +42,7 @@ public class NAuthenHandler extends SimpleChannelInboundHandler<Object> {
                 channel.close();
                 NUserManager.instance().removeChannle(channel);
                 NUserManager.instance().brocastUserActiveNumber();
+                NUtil.logger.info("idle event is been triggered,and channel is remove {}",channel.remoteAddress());
             }
         }
         ctx.fireUserEventTriggered(evt);

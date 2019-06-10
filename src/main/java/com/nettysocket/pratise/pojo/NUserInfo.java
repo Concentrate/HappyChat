@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class NUserInfo {
 
-    private static AtomicLong idGen = new AtomicLong(1000);
+    private static AtomicLong idGen = new AtomicLong(1);
 
     private Channel channel;
     private String nickName = "";
@@ -18,6 +18,9 @@ public class NUserInfo {
     private long id;
     private boolean isAuthen;
 
+    public NUserInfo() {
+
+    }
 
     public static AtomicLong getIdGen() {
         return idGen;

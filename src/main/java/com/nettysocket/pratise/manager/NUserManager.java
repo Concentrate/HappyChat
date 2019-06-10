@@ -85,6 +85,10 @@ public class NUserManager {
         });
     }
 
+    public NUserInfo getUserInfoFromChannel(Channel channel){
+        return useInfoMap.get(channel);
+    }
+
     public void brocastChannleMessage(Channel channel, String tmpMess) {
         NUserInfo userInfo = useInfoMap.get(channel);
         if (userInfo != null) {
@@ -249,12 +253,15 @@ public class NUserManager {
         channel.writeAndFlush(new TextWebSocketFrame(mess.buildJsonMessage()));
     }
 
+    public void sendChannleCommMess(Channel channel,CommonMessage tmp){
+        channel.writeAndFlush(tmp.buildJsonMessage());
+    }
 
-    public void brocastChannleMessage(String message) {
+    public void brocastChannleMessage(CommonMessage tmp) {
         doConcurrentOperation(() -> {
             traveUserInfoDoOperation(chan -> {
                 NUtil.logger.info("server start browcast message to {}", chan.remoteAddress());
-                sendChannelMessage(chan, message);
+                sendChannleCommMess(chan, tmp);
             });
             return true;
         }, false);

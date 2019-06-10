@@ -15,11 +15,7 @@ public class NMessageHandler extends SimpleChannelInboundHandler<TextWebSocketFr
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, TextWebSocketFrame textWebSocketFrame) throws Exception {
         CommonMessage<String> message = CommonMessage.parseResultV2(textWebSocketFrame.text(), String.class);
-        NUserInfo info = NUserManager.instance().getUserInfoFromChannel(channelHandlerContext.channel());
-        if (info != null) {
-            message.setExtra(new Extra().buildFromUserInfo(info));
-        }
-        NUserManager.instance().brocastChannleMessage(message);
+        NUserManager.instance().brocastChannleMessage(channelHandlerContext.channel(),message.getData());
         NUtil.logger.info("server receive a message from {}", channelHandlerContext.channel().remoteAddress());
     }
 

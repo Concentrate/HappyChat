@@ -106,6 +106,7 @@ public class NUserManager {
     public void brocastCommonMessage(CommonMessage message) {
         traveUserInfoDoOperation(chan -> {
             doConcurrentOperation(() -> {
+                NUtil.logger.info("server start browcast message to {}", chan.remoteAddress());
                 chan.writeAndFlush(new TextWebSocketFrame(message.buildJsonMessage()));
                 return true;
             }, true);
@@ -253,19 +254,8 @@ public class NUserManager {
         channel.writeAndFlush(new TextWebSocketFrame(mess.buildJsonMessage()));
     }
 
-    public void sendChannleCommMess(Channel channel,CommonMessage tmp){
-        channel.writeAndFlush(tmp.buildJsonMessage());
-    }
 
-    public void brocastChannleMessage(CommonMessage tmp) {
-        doConcurrentOperation(() -> {
-            traveUserInfoDoOperation(chan -> {
-                NUtil.logger.info("server start browcast message to {}", chan.remoteAddress());
-                sendChannleCommMess(chan, tmp);
-            });
-            return true;
-        }, false);
-    }
+
 
     public void updateChannelInfo(Channel channel) {
         NUserInfo userInfo = useInfoMap.get(channel);

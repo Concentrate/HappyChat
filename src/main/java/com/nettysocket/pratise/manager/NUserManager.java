@@ -148,6 +148,7 @@ public class NUserManager {
                 info.setNickName(nickName);
                 info.setAuthen(true);
                 info.setTime(System.currentTimeMillis());
+                info.generateIdAtom();
                 userActivNum.getAndDecrement();
                 return true;
             }
